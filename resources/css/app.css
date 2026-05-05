@@ -1,0 +1,91 @@
+/* ===== Google Font Import (must be first) ===== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Custom Scrollbar ===== */
+@layer utilities {
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: theme('colors.gray.300') transparent;
+    }
+
+    .dark .scrollbar-thin {
+        scrollbar-color: theme('colors.slate.600') transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: theme('colors.gray.300');
+        border-radius: 9999px;
+    }
+
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+        background-color: theme('colors.slate.600');
+    }
+}
+
+/* ===== Base Layer Overrides ===== */
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply transition-colors duration-300;
+    }
+
+    /* Focus ring standardization */
+    *:focus-visible {
+        @apply outline-2 outline-offset-2 outline-brand-500;
+    }
+}
+
+/* ===== Component Layer ===== */
+@layer components {
+    /* Sidebar menu item base */
+    .sidebar-link {
+        @apply flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-medium
+               transition-all duration-200 ease-in-out
+               text-gray-500 hover:text-gray-900 hover:bg-gray-100
+               dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700/60;
+    }
+
+    .sidebar-link.active {
+        @apply text-white bg-gradient-to-r from-brand-600 to-brand-500
+               shadow-lg shadow-brand-500/25
+               dark:from-brand-500 dark:to-purple-500
+               dark:shadow-brand-500/30;
+    }
+
+    .sidebar-link.active svg {
+        @apply text-white;
+    }
+
+    /* Glass card effect */
+    .glass-card {
+        @apply bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl
+               border border-white/20 dark:border-slate-700/50
+               rounded-2xl shadow-sm shadow-gray-200/50 dark:shadow-slate-900/50;
+    }
+
+    /* Topbar search */
+    .search-input {
+        @apply w-full pl-11 pr-4 py-2.5 rounded-2xl border-0
+               bg-gray-100 dark:bg-slate-700/60
+               text-gray-900 dark:text-slate-200
+               placeholder-gray-400 dark:placeholder-slate-500
+               focus:ring-2 focus:ring-brand-500/40 dark:focus:ring-brand-400/40
+               focus:bg-white dark:focus:bg-slate-700
+               transition-all duration-200 text-sm;
+    }
+}
