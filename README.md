@@ -1,30 +1,68 @@
-1. **Clone Repository**
-git clone [https://github.com/alzahraramadhani/lifelinemlg-crm.git](https://github.com/alzahraramadhani/lifelinemlg-crm.git)
+# 🚀 Cara Menjalankan Project Lifeline CRM
+
+Ikuti langkah-langkah berikut untuk menjalankan project di lokal:
+
+## 1. Clone Repository
+
+```bash
+git clone https://github.com/alzahraramadhani/lifelinemlg-crm.git
 cd lifelinemlg-crm
+```
 
-# Install package PHP
+## 2. Install Dependency Backend (PHP)
+
+```bash
 composer install
+```
 
-# Install package Frontend
+## 3. Install Dependency Frontend
+
+```bash
 npm install
 npm run build
+```
 
-# setup Environment File
+## 4. Setup File Environment
+
+Copy file `.env`:
+
+```bash
 cp .env.example .env
-Buka file .env dan sesuaikan konfigurasi database DB_CONNECTION=mysql
+```
+
+Lalu buka file `.env` dan sesuaikan konfigurasi database:
+
+```env
+DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=lifeline_db
 DB_USERNAME=root
-DB_PASSWORD=.
+DB_PASSWORD=
+```
 
-# Generate Application Key
+## 5. Generate Application Key
+
+```bash
 php artisan key:generate
+```
 
-# Migrate Database
-Pastikan database lifeline_db sudah dibuat di MySQL, lalu jalankan:
+## 6. Migrasi Database
+
+Pastikan kamu sudah membuat database dengan nama `lifeline_db` di MySQL, lalu jalankan:
+
+```bash
 php artisan migrate
+```
 
-# Jalankan Project
+## 7. Jalankan Project
+
+```bash
 php artisan serve
-Buka http://127.0.0.1:8000 di browser kamu.   
+```
+
+Buka di browser:
+
+```
+http://127.0.0.1:8000
+```
