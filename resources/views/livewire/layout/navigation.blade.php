@@ -122,33 +122,6 @@ new class extends Component
 
             {{-- Bottom Section --}}
             <div class="px-4 pb-4 mt-auto space-y-3">
-                {{-- Dark Mode Toggle --}}
-                <div class="px-4 py-3 rounded-2xl bg-gray-50 dark:bg-slate-700/40">
-                    <button @click="toggleTheme()"
-                            class="flex items-center gap-3 w-full text-sm font-medium text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-                            id="theme-toggle-btn">
-                        {{-- Sun icon (shown in dark mode) --}}
-                        <template x-if="isDark">
-                            <svg class="w-5 h-5 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
-                            </svg>
-                        </template>
-                        {{-- Moon icon (shown in light mode) --}}
-                        <template x-if="!isDark">
-                            <svg class="w-5 h-5 text-brand-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-                            </svg>
-                        </template>
-                        <span x-text="isDark ? 'Light Mode' : 'Dark Mode'"></span>
-
-                        {{-- Toggle pill --}}
-                        <div class="ml-auto relative w-11 h-6 rounded-full transition-colors duration-300"
-                             :class="isDark ? 'bg-brand-500' : 'bg-gray-300'">
-                            <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300"
-                                 :class="isDark ? 'translate-x-5' : 'translate-x-0'"></div>
-                        </div>
-                    </button>
-                </div>
 
                 {{-- Divider --}}
                 <div class="border-t border-gray-200/70 dark:border-slate-700/50"></div>

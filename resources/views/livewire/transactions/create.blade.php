@@ -26,6 +26,23 @@ new #[Layout('layouts.app')] class extends Component {
     public $selected_camera_id = '';
     public $available_packages = [];
     public $selected_package_id = '';
+    
+    public function with()
+    {
+        // Calculate stock counts per model
+        $stockCounts = Camera::where('status', 'Available')
+            ->with('cameraModel')
+            ->get()
+            ->groupBy('camera_model_id')
+            ->map(function ($cameras) {
+                return [
+                    'name' => $cameras->first()->cameraModel->brand . ' ' . $cameras->first()->cameraModel->name,
+                    'count' => $cameras->count()
+                ];
+            });
+
+        return compact('stockCounts');
+    }
 
     public function mount()
     {
@@ -59,6 +76,11 @@ new #[Layout('layouts.app')] class extends Component {
             $this->available_packages = [];
         }
         $this->selected_package_id = '';
+        
+        // Auto-select package if only one exists
+        if (count($this->available_packages) === 1) {
+            $this->selected_package_id = $this->available_packages[0]->id;
+        }
     }
 
     public function addToCart()
@@ -130,7 +152,7 @@ new #[Layout('layouts.app')] class extends Component {
             return;
         }
 
-        DB::transaction(function () {
+        $transactionId = DB::transaction(function () {
             // 1. Create Transaction
             $transaction = Transaction::create([
                 'customer_id' => $this->customer_id,
@@ -158,7 +180,11 @@ new #[Layout('layouts.app')] class extends Component {
                 // Update Camera Status to Rented
                 Camera::where('id', $item['camera_id'])->update(['status' => 'Rented']);
             }
+
+            return $transaction->id;
         });
+
+        session()->flash('success', 'Rental transaction #TRX-' . str_pad($transactionId, 5, '0', STR_PAD_LEFT) . ' created successfully!');
 
         return $this->redirectRoute('transactions.index', navigate: true);
     }
@@ -244,8 +270,24 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
         </div>
 
-        {{-- Right Column: Cart Summary --}}
-        <div class="lg:col-span-1">
+        {{-- Right Column: Cart Summary & Stock --}}
+        <div class="lg:col-span-1 space-y-6">
+            {{-- Stock Overview Card --}}
+            <div class="p-6 bg-white border shadow-sm dark:bg-slate-800 rounded-2xl border-gray-200/70 dark:border-slate-700/50 shadow-gray-200/40 dark:shadow-slate-900/50">
+                <h2 class="mb-4 text-sm font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">Available Stock</h2>
+                <div class="space-y-3">
+                    @forelse($stockCounts as $modelId => $data)
+                        <div class="flex items-center justify-between p-2 rounded-lg bg-gray-50/50 dark:bg-slate-700/20">
+                            <span class="text-xs font-medium text-gray-700 dark:text-slate-300">{{ $data['name'] }}</span>
+                            <span class="inline-flex items-center justify-center w-6 h-6 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-full dark:bg-emerald-500/20 dark:text-emerald-400">
+                                {{ $data['count'] }}
+                            </span>
+                        </div>
+                    @empty
+                        <p class="text-xs text-gray-400 italic text-center py-2">No available units</p>
+                    @endforelse
+                </div>
+            </div>
             <div class="sticky p-6 bg-white border shadow-sm top-24 dark:bg-slate-800 rounded-2xl border-gray-200/70 dark:border-slate-700/50 shadow-gray-200/40 dark:shadow-slate-900/50">
                 <h2 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Rental Cart</h2>
                 

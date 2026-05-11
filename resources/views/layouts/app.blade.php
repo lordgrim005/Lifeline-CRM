@@ -1,8 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-      x-data="themeManager()"
-      x-init="init()"
-      :class="{ 'dark': isDark }">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,31 +16,10 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         
-        {{-- ===== THEME MANAGER SCRIPT ===== --}}
-        <script>
-            function themeManager() {
-                return {
-                    isDark: false,
-
-                    init() {
-                        const stored = localStorage.getItem('theme');
-                        if (stored === 'dark') {
-                            this.isDark = true;
-                        } else if (stored === 'light') {
-                            this.isDark = false;
-                        } else {
-                            this.isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                        }
-                    },
-
-                    toggleTheme() {
-                        this.isDark = !this.isDark;
-                        localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
-                    }
-                }
-            }
-        </script>
         @livewireStyles
+        <style>
+            [x-cloak] { display: none !important; }
+        </style>
     </head>
     <body class="font-sans antialiased">
         {{-- ===== MAIN DASHBOARD SHELL ===== --}}
@@ -72,18 +48,6 @@
                                 </svg>
                             </button>
 
-                            {{-- Search Bar --}}
-                            <div class="relative w-full max-w-md hidden sm:block">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <svg class="w-4 h-4 text-gray-400 dark:text-slate-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                                    </svg>
-                                </div>
-                                <input type="text"
-                                       class="search-input"
-                                       placeholder="Search anything..."
-                                       id="global-search">
-                            </div>
                         </div>
 
                         {{-- Right: Greeting + Actions --}}
@@ -99,14 +63,6 @@
                                    x-on:profile-updated.window="name = $event.detail.name"></p>
                             </div>
 
-                            {{-- Notification Bell (decorative placeholder) --}}
-                            <button class="relative p-2.5 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700 transition-colors"
-                                    id="notification-btn">
-                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-                                </svg>
-                                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white dark:ring-slate-800"></span>
-                            </button>
 
                             {{-- User Avatar (mobile only) --}}
                             <a href="{{ route('profile') }}" wire:navigate
@@ -124,6 +80,28 @@
                     @if (isset($header))
                         <div class="mb-6">
                             {{ $header }}
+                        </div>
+                    @endif
+
+                    {{-- Flash Messages --}}
+                    @if (session()->has('success'))
+                        <div x-data="{ show: true }" 
+                             x-show="show" 
+                             x-init="setTimeout(() => show = false, 5000)"
+                             class="mb-6 flex items-center justify-between p-4 text-emerald-700 bg-emerald-50 rounded-2xl border border-emerald-100 shadow-sm shadow-emerald-200/40">
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
+                                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                                <span class="text-sm font-semibold">{{ session('success') }}</span>
+                            </div>
+                            <button @click="show = false" class="text-emerald-500 hover:text-emerald-700 transition-colors">
+                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
                         </div>
                     @endif
 

@@ -18,6 +18,10 @@ new #[Layout('layouts.app')] class extends Component {
     public $camera_model_id;
     public $serial_number;
     public $status = 'Available';
+    
+    // Bulk Actions
+    public $selectedRows = [];
+    public $selectPage = false;
  
     public function mount()
     {
@@ -39,6 +43,30 @@ new #[Layout('layouts.app')] class extends Component {
     public function updatedStatusFilter()
     {
         $this->loadCameras();
+        $this->selectedRows = [];
+        $this->selectPage = false;
+    }
+
+    public function updatedSelectPage($value)
+    {
+        if ($value) {
+            $this->selectedRows = $this->cameras->pluck('id')->map(fn($id) => (string) $id)->toArray();
+        } else {
+            $this->selectedRows = [];
+        }
+    }
+
+    public function bulkUpdateStatus($newStatus)
+    {
+        if (empty($this->selectedRows)) return;
+
+        Camera::whereIn('id', $this->selectedRows)->update(['status' => $newStatus]);
+        
+        $this->selectedRows = [];
+        $this->selectPage = false;
+        $this->loadCameras();
+        
+        session()->flash('success', 'Successfully updated ' . count($this->selectedRows) . ' units to ' . $newStatus);
     }
  
     public function openModal()
@@ -144,6 +172,22 @@ new #[Layout('layouts.app')] class extends Component {
                 Maintenance
             </button>
         </div>
+
+        @if(!empty($selectedRows))
+            <div class="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-300">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500 ml-2">
+                    {{ count($selectedRows) }} Selected:
+                </span>
+                <div class="flex items-center gap-2 p-1 bg-white border border-gray-200 rounded-xl dark:bg-slate-800 dark:border-slate-700/50 shadow-sm shadow-gray-200/30 dark:shadow-slate-900/40">
+                    <button wire:click="bulkUpdateStatus('Available')" class="px-3 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors dark:text-emerald-400 dark:hover:bg-emerald-500/10">
+                        Set Available
+                    </button>
+                    <button wire:click="bulkUpdateStatus('Maintenance')" class="px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors dark:text-red-400 dark:hover:bg-red-500/10">
+                        Set Maintenance
+                    </button>
+                </div>
+            </div>
+        @endif
     </div>
  
     {{-- Main Content: Inventory Table --}}
@@ -152,6 +196,9 @@ new #[Layout('layouts.app')] class extends Component {
             <table class="w-full text-sm text-left whitespace-nowrap">
                 <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-slate-700/50 dark:text-slate-400">
                     <tr>
+                        <th scope="col" class="px-6 py-4">
+                            <input type="checkbox" wire:model.live="selectPage" class="w-4 h-4 text-brand-600 bg-gray-100 border-gray-300 rounded focus:ring-brand-500 dark:focus:ring-brand-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 transition-colors cursor-pointer">
+                        </th>
                         <th scope="col" class="px-6 py-4 font-semibold tracking-wider">Model</th>
                         <th scope="col" class="px-6 py-4 font-semibold tracking-wider">Serial Number</th>
                         <th scope="col" class="px-6 py-4 font-semibold tracking-wider">Status</th>
@@ -160,7 +207,10 @@ new #[Layout('layouts.app')] class extends Component {
                 </thead>
                 <tbody class="divide-y divide-gray-200/70 dark:divide-slate-700/50">
                     @forelse($cameras as $camera)
-                        <tr class="transition-colors hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
+                        <tr class="transition-colors hover:bg-gray-50/50 dark:hover:bg-slate-700/30 {{ in_array($camera->id, $selectedRows) ? 'bg-brand-50/30 dark:bg-brand-500/5' : '' }}">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" wire:model.live="selectedRows" value="{{ $camera->id }}" class="w-4 h-4 text-brand-600 bg-gray-100 border-gray-300 rounded focus:ring-brand-500 dark:focus:ring-brand-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 transition-colors cursor-pointer">
+                            </td>
                             <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
                                 {{ $camera->cameraModel->brand }} {{ $camera->cameraModel->name }}
                             </td>
@@ -204,7 +254,7 @@ new #[Layout('layouts.app')] class extends Component {
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-12 text-center text-gray-500 dark:text-slate-400">
+                            <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-slate-400">
                                 <div class="flex flex-col items-center justify-center">
                                     <svg class="w-12 h-12 mb-4 text-gray-300 dark:text-slate-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="m7.5 4.27 9 5.15"></path><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path>

@@ -5,13 +5,16 @@ use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Url;
 
 new #[Layout('layouts.app')] class extends Component {
     public Transaction $transaction;
     
     public $return_date;
     public $calculated_late_fee = 0;
-    public $isModalOpen = false;
+    
+    #[Url]
+    public $openModal = false;
 
     public function mount(Transaction $transaction)
     {
@@ -27,33 +30,37 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function calculateLateFee()
     {
-        if ($this->transaction->status === 'Completed') {
-            $this->calculated_late_fee = $this->transaction->late_fee;
+        if (!$this->transaction || $this->transaction->status === 'Completed') {
+            $this->calculated_late_fee = $this->transaction->late_fee ?? 0;
             return;
         }
 
-        $end = Carbon::parse($this->transaction->end_date);
-        $return = Carbon::parse($this->return_date);
+        if (!$this->return_date) {
+            $this->calculated_late_fee = 0;
+            return;
+        }
 
-        if ($return->greaterThan($end)) {
-            $daysLate = $return->diffInDays($end);
-            
-            // Example Logic: 50% of the daily cart price as late fee per day.
-            $dailyCartPrice = $this->transaction->items->sum('price_per_day');
-            $this->calculated_late_fee = ($dailyCartPrice * 0.5) * $daysLate;
-        } else {
+        try {
+            $end = Carbon::parse($this->transaction->end_date);
+            $return = Carbon::parse($this->return_date);
+
+            if ($return->greaterThan($end)) {
+                $daysLate = $return->diffInDays($end);
+                
+                // Example Logic: 50% of the daily cart price as late fee per day.
+                $dailyCartPrice = $this->transaction->items->sum('price_per_day');
+                $this->calculated_late_fee = ($dailyCartPrice * 0.5) * $daysLate;
+            } else {
+                $this->calculated_late_fee = 0;
+            }
+        } catch (\Exception $e) {
             $this->calculated_late_fee = 0;
         }
     }
 
-    public function openModal()
+    public function toggleModal($state)
     {
-        $this->isModalOpen = true;
-    }
-
-    public function closeModal()
-    {
-        $this->isModalOpen = false;
+        $this->openModal = $state;
     }
 
     public function processReturn()
@@ -76,12 +83,14 @@ new #[Layout('layouts.app')] class extends Component {
             }
         });
 
-        $this->closeModal();
-        $this->transaction->refresh();
+        $this->openModal = false;
+        session()->flash('success', 'Return processed successfully! Transaction #TRX-' . str_pad($this->transaction->id, 5, '0', STR_PAD_LEFT) . ' is now completed.');
+        return $this->redirectRoute('transactions.index', navigate: true);
     }
 }; ?>
 
-<div>
+<div x-data="{ modalOpen: @entangle('openModal') }" 
+     @open-return-modal.window="modalOpen = true">
     <x-slot name="header">
         <div class="flex items-center gap-4">
             <a href="{{ route('transactions.index') }}" wire:navigate class="p-2 text-gray-400 transition-colors bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 dark:bg-slate-800 dark:border-slate-700/50 dark:hover:bg-slate-700 dark:hover:text-white">
@@ -95,7 +104,7 @@ new #[Layout('layouts.app')] class extends Component {
                 <p class="mt-1 text-sm text-gray-500 dark:text-slate-400">View details and process returns.</p>
             </div>
             @if($transaction->status === 'Active')
-                <button wire:click="openModal" class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 hover:shadow-lg hover:shadow-emerald-500/30">
+                <button @click="$dispatch('open-return-modal')" class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white transition-all duration-300 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 hover:shadow-lg hover:shadow-emerald-500/30">
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
                     </svg>
@@ -222,13 +231,14 @@ new #[Layout('layouts.app')] class extends Component {
     </div>
 
     {{-- Return Modal --}}
-    @if($isModalOpen && $transaction->status === 'Active')
-        <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/50 backdrop-blur-sm">
-            <div class="relative w-full max-w-md p-4 max-h-full">
+    <div x-show="modalOpen && '{{ $transaction->status }}' === 'Active'" 
+         x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/50 backdrop-blur-sm">
+            <div class="relative w-full max-w-md p-4 max-h-full" @click.away="modalOpen = false">
                 <div class="relative bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-gray-200/20 dark:shadow-slate-900/50 border border-gray-100 dark:border-slate-700/50">
                     <div class="flex items-center justify-between p-5 border-b border-gray-100 dark:border-slate-700/50">
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Process Return</h3>
-                        <button wire:click="closeModal" class="p-1.5 text-gray-400 transition-colors rounded-xl hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-slate-700 dark:hover:text-white">
+                        <button @click="modalOpen = false" class="p-1.5 text-gray-400 transition-colors rounded-xl hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-slate-700 dark:hover:text-white">
                             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -261,7 +271,7 @@ new #[Layout('layouts.app')] class extends Component {
                         <div class="pt-4 border-t border-gray-100 dark:border-slate-700/50">
                             <p class="mb-4 text-sm text-gray-500 dark:text-slate-400">Processing this return will mark the transaction as completed and release the cameras back to Available inventory.</p>
                             <div class="flex justify-end gap-3">
-                                <button type="button" wire:click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-200 rounded-xl hover:bg-gray-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700">
+                                <button type="button" @click="modalOpen = false" class="px-4 py-2 text-sm font-medium text-gray-700 transition-colors bg-white border border-gray-200 rounded-xl hover:bg-gray-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600 dark:hover:bg-slate-700">
                                     Cancel
                                 </button>
                                 <button type="button" wire:click="processReturn" class="px-4 py-2 text-sm font-semibold text-white transition-all rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 hover:shadow-lg hover:shadow-emerald-500/30">
@@ -273,5 +283,5 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
             </div>
         </div>
-    @endif
+    </div>
 </div>

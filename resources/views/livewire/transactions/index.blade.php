@@ -6,6 +6,7 @@ use Livewire\Attributes\Layout;
 
 new #[Layout('layouts.app')] class extends Component {
     public $statusFilter = '';
+    public $search = '';
 
     public function with()
     {
@@ -13,6 +14,12 @@ new #[Layout('layouts.app')] class extends Component {
 
         if ($this->statusFilter) {
             $query->where('status', $this->statusFilter);
+        }
+
+        if ($this->search) {
+            $query->whereHas('customer', function ($q) {
+                $q->where('name', 'like', '%' . $this->search . '%');
+            });
         }
 
         return [
@@ -23,7 +30,6 @@ new #[Layout('layouts.app')] class extends Component {
     public function delete($id)
     {
         Transaction::findOrFail($id)->delete();
-        // Since we return a paginated result in with(), the component will automatically refresh the list.
     }
 }; ?>
 
@@ -58,6 +64,18 @@ new #[Layout('layouts.app')] class extends Component {
             <button wire:click="$set('statusFilter', 'Completed')" class="px-4 py-1.5 text-sm font-medium rounded-lg transition-colors {{ $statusFilter === 'Completed' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-white' }}">
                 Completed
             </button>
+        </div>
+
+        <div class="relative w-full sm:max-w-xs">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                <svg class="w-4 h-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                </svg>
+            </div>
+            <input type="text" 
+                   wire:model.live.debounce.300ms="search" 
+                   class="w-full pl-11 pr-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 block transition-colors shadow-sm shadow-gray-200/20" 
+                   placeholder="Search customer name...">
         </div>
     </div>
 
@@ -106,6 +124,11 @@ new #[Layout('layouts.app')] class extends Component {
                                     <a href="{{ route('transactions.show', $trx->id) }}" wire:navigate class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-brand-700 transition-colors bg-brand-50 rounded-lg hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
                                         View Details
                                     </a>
+                                    @if($trx->status === 'Active')
+                                        <a href="{{ route('transactions.show', $trx->id) }}?openModal=1" wire:navigate class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors bg-emerald-50 rounded-lg hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20">
+                                            Process Return
+                                        </a>
+                                    @endif
                                     <button wire:click="delete({{ $trx->id }})" wire:confirm="Are you sure you want to delete this transaction? This action cannot be undone." class="p-1.5 text-red-500 transition-colors rounded-lg hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/10" title="Delete Transaction">
                                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M3 6h18"></path>

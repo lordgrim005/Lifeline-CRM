@@ -1,8 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"
-      x-data="themeManager()"
-      x-init="init()"
-      :class="{ 'dark': isDark }">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -49,48 +46,8 @@
                     {{ $slot }}
                 </div>
 
-                {{-- Theme toggle --}}
-                <div class="flex justify-center mt-6">
-                    <button @click="toggleTheme()"
-                            class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors"
-                            id="guest-theme-toggle">
-                        <template x-if="isDark">
-                            <svg class="w-4 h-4 text-amber-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
-                            </svg>
-                        </template>
-                        <template x-if="!isDark">
-                            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-                            </svg>
-                        </template>
-                        <span x-text="isDark ? 'Light Mode' : 'Dark Mode'"></span>
-                    </button>
-                </div>
             </div>
         </div>
 
-        {{-- Theme Manager --}}
-        <script>
-            function themeManager() {
-                return {
-                    isDark: false,
-                    init() {
-                        const stored = localStorage.getItem('theme');
-                        if (stored === 'dark') {
-                            this.isDark = true;
-                        } else if (stored === 'light') {
-                            this.isDark = false;
-                        } else {
-                            this.isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                        }
-                    },
-                    toggleTheme() {
-                        this.isDark = !this.isDark;
-                        localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
-                    }
-                }
-            }
-        </script>
     </body>
 </html>
