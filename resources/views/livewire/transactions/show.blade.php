@@ -51,16 +51,11 @@ new #[Layout('layouts.app')] class extends Component {
             $end = Carbon::parse($endDateStr)->startOfDay();
             $return = Carbon::parse($this->return_date)->startOfDay();
 
-            if ($return->gt($end)) {
-                // Use diffInDays which is reliable when both are startOfDay
-                $this->days_late = (int) $end->diffInDays($return);
+            if ($return->greaterThan($end)) {
+                $this->days_late = (int) abs($end->diffInDays($return));
                 
-                // Recalculate daily price from items to be safe
-                $dailyCartPrice = DB::table('transaction_items')
-                    ->where('transaction_id', $this->transaction->id)
-                    ->sum('price_per_day');
-                    
-                $this->calculated_late_fee = $dailyCartPrice * $this->days_late;
+                // Late fee: flat Rp 50.000 per day of delay
+                $this->calculated_late_fee = 50000 * $this->days_late;
             } else {
                 $this->days_late = 0;
                 $this->calculated_late_fee = 0;
@@ -81,11 +76,16 @@ new #[Layout('layouts.app')] class extends Component {
         if ($this->transaction->status === 'Completed') return;
 
         DB::transaction(function () {
+            // Calculate final grand total = sum of item subtotals + late fee
+            $subtotalItems = $this->transaction->items->sum('subtotal');
+            $finalGrandTotal = $subtotalItems + $this->calculated_late_fee;
+
             // Update Transaction
             $this->transaction->update([
                 'status' => 'Completed',
                 'payment_status' => 'Paid',
                 'late_fee' => $this->calculated_late_fee,
+                'grand_total' => $finalGrandTotal,
             ]);
 
             // Release Cameras
@@ -234,7 +234,12 @@ new #[Layout('layouts.app')] class extends Component {
                         <div class="flex justify-between text-base font-bold">
                             <span class="text-gray-900 dark:text-white">Grand Total</span>
                             <span class="text-brand-600 dark:text-brand-400">
-                                Rp {{ number_format($transaction->grand_total + ($transaction->status === 'Completed' ? $transaction->late_fee : $calculated_late_fee), 0, ',', '.') }}
+                                @php
+                                    $subtotalItems = $transaction->items->sum('subtotal');
+                                    $activeFee = $transaction->status === 'Completed' ? $transaction->late_fee : $calculated_late_fee;
+                                    $displayGrandTotal = $subtotalItems + $activeFee;
+                                @endphp
+                                Rp {{ number_format($displayGrandTotal, 0, ',', '.') }}
                             </span>
                         </div>
                     </div>

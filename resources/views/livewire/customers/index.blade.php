@@ -132,7 +132,7 @@ new #[Layout('layouts.app')] class extends Component {
                     <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
             </div>
-            <input type="text" wire:model.live.debounce.300ms="search" class="w-full py-2.5 pl-10 pr-4 text-sm text-gray-900 transition-colors border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 dark:bg-slate-800 dark:border-slate-700/50 dark:placeholder-slate-400 dark:text-white dark:focus:ring-brand-400/40 dark:focus:border-brand-400 shadow-sm" placeholder="Search customers by name, phone, or IG...">
+            <input type="text" wire:model.live.debounce.300ms="search" class="w-full py-2.5 pl-10 pr-4 text-sm text-gray-900 transition-colors border border-gray-200 bg-white rounded-xl focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 dark:bg-slate-800/80 dark:border-slate-700/50 dark:placeholder-slate-400 dark:text-white dark:focus:ring-brand-400/40 dark:focus:border-brand-400 shadow-sm" placeholder="Search customers by name, phone, or IG...">
         </div>
     </div>    <div class="bg-white border shadow-sm dark:bg-slate-800 rounded-2xl border-gray-200/70 dark:border-slate-700/50 shadow-gray-200/40 dark:shadow-slate-900/50 overflow-hidden">
         <div class="overflow-x-auto">
