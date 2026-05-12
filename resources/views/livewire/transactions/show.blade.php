@@ -12,6 +12,7 @@ new #[Layout('layouts.app')] class extends Component {
     
     public $return_date;
     public $calculated_late_fee = 0;
+    public $days_late = 0;
     
     #[Url]
     public $openModal = false;
@@ -37,23 +38,35 @@ new #[Layout('layouts.app')] class extends Component {
 
         if (!$this->return_date) {
             $this->calculated_late_fee = 0;
+            $this->days_late = 0;
             return;
         }
 
         try {
-            $end = Carbon::parse($this->transaction->end_date);
-            $return = Carbon::parse($this->return_date);
+            // Ensure we are only comparing dates by formatting them first
+            $endDateStr = $this->transaction->end_date instanceof Carbon 
+                ? $this->transaction->end_date->format('Y-m-d') 
+                : Carbon::parse($this->transaction->end_date)->format('Y-m-d');
+            
+            $end = Carbon::parse($endDateStr)->startOfDay();
+            $return = Carbon::parse($this->return_date)->startOfDay();
 
-            if ($return->greaterThan($end)) {
-                $daysLate = $return->diffInDays($end);
+            if ($return->gt($end)) {
+                // Use diffInDays which is reliable when both are startOfDay
+                $this->days_late = (int) $end->diffInDays($return);
                 
-                // Example Logic: 50% of the daily cart price as late fee per day.
-                $dailyCartPrice = $this->transaction->items->sum('price_per_day');
-                $this->calculated_late_fee = ($dailyCartPrice * 0.5) * $daysLate;
+                // Recalculate daily price from items to be safe
+                $dailyCartPrice = DB::table('transaction_items')
+                    ->where('transaction_id', $this->transaction->id)
+                    ->sum('price_per_day');
+                    
+                $this->calculated_late_fee = $dailyCartPrice * $this->days_late;
             } else {
+                $this->days_late = 0;
                 $this->calculated_late_fee = 0;
             }
         } catch (\Exception $e) {
+            $this->days_late = 0;
             $this->calculated_late_fee = 0;
         }
     }
@@ -257,14 +270,20 @@ new #[Layout('layouts.app')] class extends Component {
                         </div>
 
                         @if($calculated_late_fee > 0)
-                            <div class="flex items-center justify-between p-4 bg-red-50 rounded-xl dark:bg-red-500/10">
-                                <span class="text-sm font-medium text-red-700 dark:text-red-400">Late Fee Required:</span>
-                                <span class="text-base font-bold text-red-700 dark:text-red-400">Rp {{ number_format($calculated_late_fee, 0, ',', '.') }}</span>
+                            <div class="p-4 bg-red-50 rounded-xl dark:bg-red-500/10 border border-red-100 dark:border-red-500/20">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm font-medium text-red-700 dark:text-red-400">Late Duration:</span>
+                                    <span class="text-sm font-bold text-red-700 dark:text-red-400">{{ $days_late }} Day(s)</span>
+                                </div>
+                                <div class="flex items-center justify-between pt-2 border-t border-red-200/50 dark:border-red-500/20">
+                                    <span class="text-sm font-medium text-red-700 dark:text-red-400">Late Fee (100%/day):</span>
+                                    <span class="text-base font-bold text-red-700 dark:text-red-400">Rp {{ number_format($calculated_late_fee, 0, ',', '.') }}</span>
+                                </div>
                             </div>
                         @else
-                            <div class="flex items-center justify-between p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
+                            <div class="flex items-center justify-between p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
                                 <span class="text-sm font-medium text-emerald-700 dark:text-emerald-400">Status:</span>
-                                <span class="text-sm font-bold text-emerald-700 dark:text-emerald-400">On Time</span>
+                                <span class="text-sm font-bold text-emerald-700 dark:text-emerald-400">On Time (No Fee)</span>
                             </div>
                         @endif
 
